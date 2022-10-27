@@ -93,6 +93,19 @@ extension RubyExtension: ExtensionProtocol {
 }
 
 extension RubyExtension {
+	static let bundle: Bundle? = {
+		// Determine if we are executing within the main application or an extension
+		let mainBundle = Bundle.main
+
+		if mainBundle.bundleURL.pathExtension == "appex" {
+			return mainBundle
+		}
+
+		let bundleURL = mainBundle.bundleURL.appendingPathComponent("Contents/Extensions/RubyExtension.appex", isDirectory: true)
+
+		return Bundle(url: bundleURL)
+	}()
+
 	static let envKeys = Set(["GEM_HOME", "GEM_PATH", "SOLARGRAPH_CACHE", "SOLARGRAPH_GLOBAL_CONFIG",
 							   "PATH", "SHLVL", "TERM_PROGRAM", "PWD", "TERM_PROGRAM_VERSION", "SHELL", "TERM"])
 

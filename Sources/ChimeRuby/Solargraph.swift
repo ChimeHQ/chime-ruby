@@ -34,7 +34,7 @@ struct Solargraph {
 	let processHostServiceName: String
 
     static func runLocateScript(with userEnv: [String : String], in rootURL: URL, update: Bool, processHostServiceName: String) async throws -> Data {
-		guard let locateScriptURL = Bundle.main.url(forResource: "locate_solargraph", withExtension: "sh") else {
+		guard let locateScriptURL = RubyExtension.bundle?.url(forResource: "locate_solargraph", withExtension: "sh") else {
 			throw SolargraphError.setupScriptNotFound
 		}
 
@@ -63,11 +63,11 @@ struct Solargraph {
     }
 
     var builtInConfigURL: URL? {
-		return Bundle.main.url(forResource: "solargraph", withExtension: "yml")
+		return RubyExtension.bundle?.url(forResource: "solargraph", withExtension: "yml")
     }
 
     var builtInNoRubocopConfigURL: URL? {
-		return Bundle.main.url(forResource: "solargraph_no_rubocop", withExtension: "yml")
+		return RubyExtension.bundle?.url(forResource: "solargraph_no_rubocop", withExtension: "yml")
     }
 
     func executionParameters(for command: String, arguments: [String] = []) async throws -> Process.ExecutionParameters {
