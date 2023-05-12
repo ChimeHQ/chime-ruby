@@ -3,16 +3,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "ChimeRuby",
+	name: "ChimeRuby",
 	platforms: [.macOS(.v11)],
-    products: [
-        .library(name: "ChimeRuby", targets: ["ChimeRuby"]),
-    ],
-    dependencies: [
-		.package(url: "https://github.com/ChimeHQ/ChimeKit", branch: "main"),
-    ],
-    targets: [
-        .target(name: "ChimeRuby", dependencies: ["ChimeKit"]),
-        .testTarget(name: "ChimeRubyTests", dependencies: ["ChimeRuby"]),
-    ]
+	products: [
+		.library(name: "ChimeRuby", targets: ["ChimeRuby"]),
+	],
+	dependencies: [
+		.package(url: "https://github.com/ChimeHQ/ChimeKit", from: "0.2.0"),
+	],
+	targets: [
+		.target(name: "ChimeRuby", dependencies: ["ChimeKit"]),
+		.testTarget(name: "ChimeRubyTests", dependencies: ["ChimeRuby"]),
+	]
 )

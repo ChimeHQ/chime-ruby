@@ -41,17 +41,8 @@ public class RubyExtension {
 			return try await self.provideParams(rootURL: url)
         }
 
-		let filter: LSPService.ContextFilter = { (projContext, docContext) in
-			if docContext?.uti.conforms(to: .rubyScript) == true {
-				return true
-			}
-
-			return RubyExtension.projectRoot(at: projContext.url)
-		}
-
         let service = LSPService(host: host,
 								 serverOptions: options,
-								 contextFilter: filter,
 								 executionParamsProvider: paramProvider,
 								 processHostServiceName: processHostServiceName)
 
@@ -62,6 +53,13 @@ public class RubyExtension {
 }
 
 extension RubyExtension: ExtensionProtocol {
+	public var configuration: ExtensionConfiguration {
+		get async throws {
+			return ExtensionConfiguration(documentFilter: [.uti(.rubyScript)],
+										  directoryContentFilter: [.uti(.rubyScript), .fileName("Gemfile")])
+		}
+	}
+
     public func didOpenProject(with context: ProjectContext) async throws {
         try await lspService(for: context).didOpenProject(with: context)
     }
@@ -155,14 +153,4 @@ extension RubyExtension {
 
 		return params
     }
-}
-
-extension RubyExtension {
-	private static func projectRoot(at url: URL) -> Bool {
-		let value = try? FileManager.default
-			.contentsOfDirectory(atPath: url.absoluteURL.path)
-			.contains { $0 == "Gemfile" }
-
-		return value ?? false
-	}
 }
