@@ -1,25 +1,18 @@
 import Foundation
-import os.log
+import OSLog
 
-import ConcurrencyPlus
 import ChimeKit
 import LanguageServerProtocol
-import ProcessServiceClient
 
-public class RubyExtension {
+@MainActor
+public final class RubyExtension {
     private let host: any HostProtocol
-    private var lspServices: [ProjectIdentity: LSPService]
-    private let logger: Logger
-    private var shouldUpdate: Bool
-	public let processHostServiceName: String
-	private let taskQueue = TaskQueue()
+    private var lspServices = [ProjectIdentity: LSPService]()
+    private let logger = Logger(subsystem: "com.chimehq.Edit.Ruby", category: "RubyExtension")
+    private var shouldUpdate = false
 
-    init(host: any HostProtocol, processHostServiceName: String) {
+    init(host: any HostProtocol) {
         self.host = host
-        self.lspServices = [:]
-		self.logger = Logger(subsystem: "com.chimehq.Edit.Ruby", category: "RubyExtension")
-        self.shouldUpdate = false
-		self.processHostServiceName = processHostServiceName
     }
 
     private func lspService(for docContext: DocumentContext) -> LSPService? {
@@ -44,7 +37,7 @@ public class RubyExtension {
         let service = LSPService(host: host,
 								 serverOptions: options,
 								 executionParamsProvider: paramProvider,
-								 processHostServiceName: processHostServiceName)
+								 runInUserShell: true)
 
         lspServices[context.id] = service
 
@@ -54,39 +47,45 @@ public class RubyExtension {
 
 extension RubyExtension: ExtensionProtocol {
 	public var configuration: ExtensionConfiguration {
-		get async throws {
-			return ExtensionConfiguration(documentFilter: [.uti(.rubyScript)],
-										  directoryContentFilter: [.uti(.rubyScript), .fileName("Gemfile")])
+		get throws {
+			ExtensionConfiguration(documentFilter: [.uti(.rubyScript)],
+								   directoryContentFilter: [.uti(.rubyScript), .fileName("Gemfile")])
 		}
 	}
+	
+	public var applicationService: ApplicationService {
+		return self
+	}
+}
 
-    public func didOpenProject(with context: ProjectContext) async throws {
-        try await lspService(for: context).didOpenProject(with: context)
+extension RubyExtension: ApplicationService {
+    public func didOpenProject(with context: ProjectContext) throws {
+        try lspService(for: context).didOpenProject(with: context)
     }
 
-    public func willCloseProject(with context: ProjectContext) async throws {
-        try await lspService(for: context).willCloseProject(with: context)
+    public func willCloseProject(with context: ProjectContext) throws {
+        try lspService(for: context).willCloseProject(with: context)
     }
 
-    public func symbolService(for context: ProjectContext) async throws -> SymbolQueryService? {
-        return try await lspService(for: context).symbolService(for: context)
+    public func symbolService(for context: ProjectContext) throws -> SymbolQueryService? {
+        try lspService(for: context).symbolService(for: context)
     }
 
-    public func didOpenDocument(with context: DocumentContext) async throws -> URL? {
-        return try await lspService(for: context)?.didOpenDocument(with: context)
+    public func didOpenDocument(with context: DocumentContext) throws {
+        try lspService(for: context)?.didOpenDocument(with: context)
     }
 
-    public func didChangeDocumentContext(from oldContext: DocumentContext, to newContext: DocumentContext) async throws {
-        try await willCloseDocument(with: oldContext)
-        let _ = try await didOpenDocument(with: newContext)
+    public func didChangeDocumentContext(from oldContext: DocumentContext, to newContext: DocumentContext) throws {
+        try willCloseDocument(with: oldContext)
+        try didOpenDocument(with: newContext)
     }
 
-    public func willCloseDocument(with context: DocumentContext) async throws {
-        try await lspService(for: context)?.willCloseDocument(with: context)
+    public func willCloseDocument(with context: DocumentContext) throws {
+        try lspService(for: context)?.willCloseDocument(with: context)
     }
 
-    public func documentService(for context: DocumentContext) async throws -> DocumentService? {
-        return try await lspService(for: context)?.documentService(for: context)
+    public func documentService(for context: DocumentContext) throws -> DocumentService? {
+         try lspService(for: context)?.documentService(for: context)
     }
 }
 
@@ -108,26 +107,22 @@ extension RubyExtension {
 							   "PATH", "SHLVL", "TERM_PROGRAM", "PWD", "TERM_PROGRAM_VERSION", "SHELL", "TERM"])
 
 	private func provideParams(rootURL: URL) async throws -> Process.ExecutionParameters {
-		let task = taskQueue.addOperation {
-			let updateNeeded = self.shouldUpdate
+		let updateNeeded = self.shouldUpdate
 
-			self.shouldUpdate = false
+		self.shouldUpdate = false
 
-			return try await self.getSolargraphExecutionParameters(rootURL: rootURL, update: updateNeeded)
-		}
-
-		return try await task.value
+		return try await self.getSolargraphExecutionParameters(rootURL: rootURL, update: updateNeeded)
     }
 
 
 	private func getSolargraphExecutionParameters(rootURL: URL, update: Bool) async throws -> Process.ExecutionParameters {
-		let userEnv = try await HostedProcess.userEnvironment(with: processHostServiceName)
+		let userEnv = try await host.captureUserEnvironment()
 
 		let printableEnv = userEnv.filter({ RubyExtension.envKeys.contains($0.key) })
 
 		logger.info("Ruby environment: \(printableEnv, privacy: .public)")
 
-		let solargraph = try await Solargraph.findInstance(with: userEnv, in: rootURL, update: update, processHostServiceName: processHostServiceName)
+		let solargraph = try await Solargraph.findInstance(with: userEnv, in: rootURL, update: update, host: host)
 
         let params = try await solargraph.startServerParameters()
 

@@ -1,12 +1,13 @@
 import Foundation
 
+import ChimeKit
 import ProcessEnv
-import ProcessServiceClient
 
 enum SolargraphError: Error {
 	case setupScriptNotFound
 }
 
+@MainActor
 struct Solargraph {
 	static let serverOptions: [String: Bool] = [
 		"autoformat": false,
@@ -31,9 +32,9 @@ struct Solargraph {
     let details: LocatorOutput
     let userEnv: [String : String]
     let rootURL: URL
-	let processHostServiceName: String
+	let host: HostProtocol
 
-    static func runLocateScript(with userEnv: [String : String], in rootURL: URL, update: Bool, processHostServiceName: String) async throws -> Data {
+    static func runLocateScript(with userEnv: [String : String], in rootURL: URL, update: Bool, host: HostProtocol) async throws -> Data {
 		guard let locateScriptURL = RubyExtension.bundle?.url(forResource: "locate_solargraph", withExtension: "sh") else {
 			throw SolargraphError.setupScriptNotFound
 		}
@@ -42,18 +43,15 @@ struct Solargraph {
 
 		let params = Process.ExecutionParameters(path: "/bin/sh", arguments: args, environment: userEnv, currentDirectoryURL: rootURL)
 
-		// this is stupid, but necessary
-		let userParams = try await HostedProcess.userShellInvocation(of: params, with: processHostServiceName)
-
-		return try await HostedProcess(named: processHostServiceName, parameters: userParams).runAndReadStdout()
+		return try await host.launchProcess(with: params, inUserShell: true).readStdout()
     }
 
-	static func findInstance(with userEnv: [String : String], in rootURL: URL, update: Bool, processHostServiceName: String) async throws -> Solargraph {
-		let data = try await runLocateScript(with: userEnv, in: rootURL, update: update, processHostServiceName: processHostServiceName)
+	static func findInstance(with userEnv: [String : String], in rootURL: URL, update: Bool, host: HostProtocol) async throws -> Solargraph {
+		let data = try await runLocateScript(with: userEnv, in: rootURL, update: update, host: host)
 
 		let details = try JSONDecoder().decode(LocatorOutput.self, from: data)
 
-		return Solargraph(details: details, userEnv: userEnv, rootURL: rootURL, processHostServiceName: processHostServiceName)
+		return Solargraph(details: details, userEnv: userEnv, rootURL: rootURL, host: host)
     }
 
     var globalConfigExists: Bool {
@@ -101,12 +99,10 @@ struct Solargraph {
 
         let args = (details.arguments ?? []) + [command] + arguments
 
-        let params = Process.ExecutionParameters(path: path,
-                                                 arguments: args,
-                                                 environment: env,
-                                                 currentDirectoryURL: rootURL)
-
-		return try await HostedProcess.userShellInvocation(of: params, with: processHostServiceName)
+		return Process.ExecutionParameters(path: path,
+										   arguments: args,
+										   environment: env,
+										   currentDirectoryURL: rootURL)
     }
 
     func startServerParameters() async throws -> Process.ExecutionParameters {
@@ -116,7 +112,7 @@ struct Solargraph {
     func updateDocumentation() async throws {
         let params = try await executionParameters(for: "download-core")
 
-		_ = try await HostedProcess(named: processHostServiceName, parameters: params).runAndReadStdout()
+		_ = try await host.launchProcess(with: params, inUserShell: true).readStdout()
     }
 
     func indexBundle() async throws {
@@ -127,6 +123,6 @@ struct Solargraph {
         // This is called "bundle", but actually does YARD work
         let params = try await executionParameters(for: "bundle")
 
-		_ = try await HostedProcess(named: processHostServiceName, parameters: params).runAndReadStdout()
+		_ = try await host.launchProcess(with: params, inUserShell: true).readStdout()
     }
 }

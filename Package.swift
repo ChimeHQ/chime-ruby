@@ -9,7 +9,7 @@ let package = Package(
 		.library(name: "ChimeRuby", targets: ["ChimeRuby"]),
 	],
 	dependencies: [
-		.package(url: "https://github.com/ChimeHQ/ChimeKit", from: "0.2.0"),
+		.package(url: "https://github.com/ChimeHQ/ChimeKit", from: "0.3.0"),
 	],
 	targets: [
 		.target(name: "ChimeRuby", dependencies: ["ChimeKit"]),
