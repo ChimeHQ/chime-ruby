@@ -1,4 +1,8 @@
-[![License][license badge]][license]
+<div align="center">
+
+[![Matrix][matrix badge]][matrix]
+
+</div>
 
 # chime-ruby
 A [Chime][chime] extension for Ruby.
@@ -7,15 +11,17 @@ A [Chime][chime] extension for Ruby.
 
 This Chime extension supports the [Ruby][ruby] programming language. It integrates [solargraph][solargraph] with [ChimeKit][chimekit]'s `ExtensionProtocol`.
 
-## Suggestions or Feedback
+## Contributing and Collaboration
 
-We'd love to hear from you! Get in touch via an issue or pull request.
+I would love to hear from you! Issues or pull requests work great. Both a [Matrix space][matrix] and [Discord][discord] are available for live help, but I have a strong bias towards answering in the form of documentation. You can also find me on [the web](https://www.massicotte.org).
 
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+I prefer collaboration, and would love to find ways to work together if you have a similar project.
 
-[license]: https://opensource.org/licenses/BSD-3-Clause
-[license badge]: https://img.shields.io/github/license/ChimeHQ/chime-ruby
-[chime]: https://www.chimehq.com
+I prefer indentation with tabs for improved accessibility. But, I'd rather you use the system you want and make a PR than hesitate because of whitespace.
+
+By participating in this project you agree to abide by the [Contributor Code of Conduct](CODE_OF_CONDUCT.md).
+
+[chime]: https://github.com/ChimeHQ/Chime
 [ruby]: https://www.ruby-lang.org
 [solargraph]: https://solargraph.org
 [chimekit]: https://github.com/ChimeHQ/ChimeKit
