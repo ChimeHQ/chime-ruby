@@ -21,6 +21,9 @@ I prefer indentation with tabs for improved accessibility. But, I'd rather you u
 
 By participating in this project you agree to abide by the [Contributor Code of Conduct](CODE_OF_CONDUCT.md).
 
+[matrix]: https://matrix.to/#/%23chimehq%3Amatrix.org
+[matrix badge]: https://img.shields.io/matrix/chimehq%3Amatrix.org?label=Matrix
+[discord]: https://discord.gg/esFpX6sErJ
 [chime]: https://github.com/ChimeHQ/Chime
 [ruby]: https://www.ruby-lang.org
 [solargraph]: https://solargraph.org
